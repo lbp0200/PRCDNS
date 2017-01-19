@@ -1,24 +1,35 @@
 import asyncio
 
-import aiohttp
-import async_timeout
+from dnslib import *
 
 
-async def fetch(session, url):
-    with async_timeout.timeout(10):
-        async with session.get(url,proxy="http://127.0.0.1:8118") as response:
-            return await response.text()
+class EchoServerProtocol:
+    def connection_made(self, transport):
+        self.transport = transport
 
-
-async def start(loop):
-    async with aiohttp.ClientSession(loop=loop) as session:
-        html = await fetch(session, 'https://dns.google.com/resolve?name=img.alicdn.com&edns_client_subnet=223.72.90.21/24')
-        print(html)
+    def datagram_received(self, data, addr):
+        message = DNSRecord.parse(data)
+        print('Received %r from %s' % (message, addr))
+        print('Send %r to %s' % ('a', addr))
+        self.transport.sendto(data, addr)
 
 
 def main():
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(start(loop))
+    print("Starting UDP server")
+    # One protocol instance will be created to serve all client requests
+    listen = loop.create_datagram_endpoint(
+        EchoServerProtocol, local_addr=('127.0.0.1', 9999))
+    transport, protocol = loop.run_until_complete(listen)
+
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+
+    print('Close Server')
+    transport.close()
+    loop.close()
 
 
 if __name__ == "__main__":
