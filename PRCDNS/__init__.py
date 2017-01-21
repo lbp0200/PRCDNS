@@ -1,9 +1,11 @@
 import asyncio
-
+import json
 from dnslib import *
 
 
 class EchoServerClientProtocol(asyncio.Protocol):
+    gFuncs = globals()
+
     def get_data(self, data):
         sz = struct.unpack(">H", data[:2])[0]
         if sz < len(data) - 2:
@@ -22,9 +24,13 @@ class EchoServerClientProtocol(asyncio.Protocol):
         request = DNSRecord.parse(data)
         print('Data received: {!r}'.format(request))
 
-        # q = DNSRecord(q=DNSQuestion(str(request.q.qname), QTYPE.ANY))
+        google_dns_resp = """{"Status": 0,"TC": false,"RD": true,"RA": true,"AD": false,"CD": false,"Question":[ {"name": "img.alicdn.com.","type": 1}],"Answer":[ {"name": "img.alicdn.com.","type": 5,"TTL": 85493,"data": "img.alicdn.com.danuoyi.alicdn.com."},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.108"},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.109"}],"Additional":[],"edns_client_subnet": "223.72.90.0/24","Comment": "Response from danuoyinewns3.gds.alicdn.com.(121.42.1.129)"}"""
+        resp = json.loads(google_dns_resp)
         a = request.reply()
-        a.add_answer(RR(str(request.q.qname), QTYPE.A, rdata=A("1.2.3.4"), ttl=60))
+        for answer in resp['Answer']:
+            qTypeFunc = QTYPE[answer['type']]
+            a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
+                            ttl=answer['TTL']))
         print('Send: {!r}'.format(a))
         b_resp = a.pack()
         b_resp = struct.pack(">H", b_resp.__len__()) + b_resp
@@ -35,6 +41,11 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
 
 def main():
+    # print(
+    #     globals()['CNAME']('img.alicdn.com.danuoyi.alicdn.com.')
+    # )
+    # exit()
+    # print(locals()['CNAME']('img.alicdn.com.danuoyi.alicdn.com.'))
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
     coro = loop.create_server(EchoServerClientProtocol, '127.0.0.1', 5353)
