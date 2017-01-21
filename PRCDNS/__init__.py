@@ -1,5 +1,6 @@
 import asyncio
 import json
+from PRCDNS.proxy_client import ProxyClient
 from dnslib import *
 
 
@@ -41,12 +42,14 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
 
 def main():
-    # print(
-    #     globals()['CNAME']('img.alicdn.com.danuoyi.alicdn.com.')
-    # )
-    # exit()
     # print(locals()['CNAME']('img.alicdn.com.danuoyi.alicdn.com.'))
     loop = asyncio.get_event_loop()
+    client = ProxyClient()
+    loop.run_until_complete( client.query_domain(loop))
+    print(
+
+    )
+    exit()
     # Each client connection will create a new protocol instance
     coro = loop.create_server(EchoServerClientProtocol, '127.0.0.1', 5353)
     server = loop.run_until_complete(coro)
