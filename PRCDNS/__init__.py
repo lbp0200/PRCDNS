@@ -6,8 +6,9 @@ from dnslib import *
 from PRCDNS.proxy_client import ProxyClient
 
 
-class EchoServerClientProtocol(asyncio.Protocol):
+class DNSServerProtocol(asyncio.Protocol):
     gFuncs = globals()
+    peername = None
 
     def get_data(self, data):
         print(data)
@@ -19,8 +20,8 @@ class EchoServerClientProtocol(asyncio.Protocol):
         return data[2:]
 
     def connection_made(self, transport):
-        peername = transport.get_extra_info('peername')
-        print('Connection from {}'.format(peername))
+        self.peername = transport.get_extra_info('peername')
+        print('Connection from {}'.format(self.peername))
         self.transport = transport
 
     def data_received(self, data):
@@ -31,7 +32,8 @@ class EchoServerClientProtocol(asyncio.Protocol):
         loop1 = asyncio.new_event_loop()
         client = ProxyClient()
         # coros = asyncio.gather(*tasks)
-        url = 'https://dns.google.com/resolve?name={}&edns_client_subnet=223.72.90.21/24'.format(str(request.q.qname))
+        url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(request.q.qname),
+                                                                                       self.peername[0])
         google_dns_resp = loop1.run_until_complete(client.get(loop1, url))
         print(google_dns_resp)
         loop1.close()
@@ -54,7 +56,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
 def main():
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
-    coro = loop.create_server(lambda: EchoServerClientProtocol(), '127.0.0.1', 5353)
+    coro = loop.create_server(lambda: DNSServerProtocol(), '127.0.0.1', 5353)
     server = loop.run_until_complete(coro)
 
     try:
