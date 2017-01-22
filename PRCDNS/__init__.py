@@ -56,7 +56,7 @@ class DNSServerProtocol(asyncio.Protocol):
 def main():
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
-    coro = loop.create_server(lambda: DNSServerProtocol(), '127.0.0.1', 5353)
+    coro = loop.create_server(lambda: DNSServerProtocol(), '0.0.0.0', 3535)
     server = loop.run_until_complete(coro)
 
     try:
