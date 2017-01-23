@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import json
 
-import proxy_client
+import PRCDNS.proxy_client
 from dnslib import *
 
 args = None
