@@ -1,9 +1,12 @@
+import argparse
 import asyncio
 import json
 
+import proxy_client
 from dnslib import *
 
-from PRCDNS.proxy_client import ProxyClient
+args = None
+myip = None
 
 
 class DNSServerProtocol(asyncio.Protocol):
@@ -11,7 +14,6 @@ class DNSServerProtocol(asyncio.Protocol):
     peername = None
 
     def get_data(self, data):
-        print(data)
         sz = struct.unpack(">H", data[:2])[0]
         if sz < len(data) - 2:
             raise Exception("Wrong size of TCP packet")
@@ -21,42 +23,62 @@ class DNSServerProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.peername = transport.get_extra_info('peername')
-        print('Connection from {}'.format(self.peername))
+        if args.debug:
+            print('Connection from {}'.format(self.peername))
         self.transport = transport
 
     def data_received(self, data):
         data = self.get_data(data)
         request = DNSRecord.parse(data)
-        print('Data received: {!r}'.format(request))
+        if args.debug:
+            print('Data received: {!r}'.format(request))
 
-        loop1 = asyncio.new_event_loop()
-        client = ProxyClient()
-        # coros = asyncio.gather(*tasks)
-        url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(request.q.qname),
-                                                                                       self.peername[0])
-        google_dns_resp = loop1.run_until_complete(client.get(loop1, url))
-        print(google_dns_resp)
-        loop1.close()
-        # google_dns_resp = """{"Status": 0,"TC": false,"RD": true,"RA": true,"AD": false,"CD": false,"Question":[ {"name": "img.alicdn.com.","type": 1}],"Answer":[ {"name": "img.alicdn.com.","type": 5,"TTL": 85493,"data": "img.alicdn.com.danuoyi.alicdn.com."},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.108"},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.109"}],"Additional":[],"edns_client_subnet": "223.72.90.0/24","Comment": "Response from danuoyinewns3.gds.alicdn.com.(121.42.1.129)"}"""
+        from IPy import IP
+        ip = IP(self.peername[0])
+        client_ip = self.peername[0]
+        if ip.iptype() == 'PRIVATE':
+            client_ip = myip
+
+        url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(request.q.qname), client_ip)
+        google_dns_resp = proxy_client.ProxyClient.get_url(url, args.proxy)
+        if args.debug:
+            print('from: {};response: {}'.format(self.peername[0], google_dns_resp))
         resp = json.loads(google_dns_resp)
         a = request.reply()
         for answer in resp['Answer']:
             qTypeFunc = QTYPE[answer['type']]
             a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
                             ttl=answer['TTL']))
-        print('Send: {!r}'.format(a))
+        if args.debug:
+            print('Send: {!r}'.format(a))
         b_resp = a.pack()
         b_resp = struct.pack(">H", b_resp.__len__()) + b_resp
         self.transport.write(b_resp)
-
-        print('Close the client socket')
         self.transport.close()
 
 
+def get_arg():
+    """解析参数"""
+    parser = argparse.ArgumentParser(prog='prcdns', description='google dns proxy.')
+    parser.add_argument('--debug', help='debug model,default NO', default=False)
+    parser.add_argument('-l', '--listen', help='listening IP,default 0.0.0.0', default='0.0.0.0')
+    parser.add_argument('-p', '--port', help='listening Port,default 3535', default=3535)
+    parser.add_argument('-r', '--proxy', help='Used For Query Google DNS,default direct', default=None)
+
+    global args
+    args = parser.parse_args()
+
+
 def main():
+    get_arg()
+    global myip
+    myip = proxy_client.ProxyClient.get_url('http://ipinfo.io/json')
+    myip = json.loads(myip)
+    myip = myip['ip']
+
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
-    coro = loop.create_server(lambda: DNSServerProtocol(), '0.0.0.0', 3535)
+    coro = loop.create_server(lambda: DNSServerProtocol(), args.listen, args.port)
     server = loop.run_until_complete(coro)
 
     try:
