@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import json
 
-import PRCDNS.proxy_client
+from .proxy_client import ProxyClient
 from dnslib import *
 
 args = None
@@ -40,7 +40,7 @@ class DNSServerProtocol(asyncio.Protocol):
             client_ip = myip
 
         url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(request.q.qname), client_ip)
-        google_dns_resp = proxy_client.ProxyClient.get_url(url, args.proxy)
+        google_dns_resp = ProxyClient.get_url(url, args.proxy)
         if args.debug:
             print('from: {};response: {}'.format(self.peername[0], google_dns_resp))
         resp = json.loads(google_dns_resp)

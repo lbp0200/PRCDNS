@@ -1,6 +1,7 @@
 import asyncio
 
 import aiohttp
+import async_timeout
 
 
 class ProxyClient:
@@ -11,10 +12,10 @@ class ProxyClient:
         self.proxy = proxy
 
     async def fetch(self, session, url):
-        # with async_timeout.timeout(10):
-        # http://127.0.0.1:8123
-        async with session.get(url, proxy=self.proxy) as response:
-            return await response.text()
+        with async_timeout.timeout(10):
+            # http://127.0.0.1:8123
+            async with session.get(url, proxy=self.proxy) as response:
+                return await response.text()
 
     async def query_domain(self, loop):
         async with aiohttp.ClientSession(loop=loop, headers={
