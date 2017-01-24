@@ -8,25 +8,30 @@ from dnslib import *
 
 
 class TestDict(unittest.TestCase):
-    def test_init(self):
-        self.assertEqual(1, 1)
-        # def test_demo(self):
+    # def test_init(self):
+    #     self.assertEqual(1, 1)
+    # def test_demo(self):
 
     def test_dig(self):
         loop = asyncio.get_event_loop()
+
         tasks = [
             asyncio.ensure_future(self.tcp_echo_client(loop)),
             asyncio.ensure_future(self.tcp_echo_client(loop)),
             asyncio.ensure_future(self.tcp_echo_client(loop)),
             asyncio.ensure_future(self.tcp_echo_client(loop)),
-            asyncio.ensure_future(self.tcp_echo_client(loop)), ]
+            asyncio.ensure_future(self.tcp_echo_client(loop)),
+        ]
+
         loop.run_until_complete(asyncio.gather(*tasks))
         loop.close()
 
     @asyncio.coroutine
     def tcp_echo_client(self, loop):
-        reader, writer = yield from asyncio.open_connection('127.0.0.1', 3535,
-                                                            loop=loop)
+        reader, writer = yield from asyncio.open_connection(
+            '127.0.0.1', 3535,
+            # '114.114.114.114', 53,
+            loop=loop)
 
         d = DNSRecord.question("google.com")
         q = d.pack()
@@ -34,7 +39,7 @@ class TestDict(unittest.TestCase):
         writer.write(b_req)
 
         data = yield from reader.read()
-        resp = DNSRecord.parse(data)
+        resp = DNSRecord.parse(data[2:])
         print('Received: %r' % resp)
 
         print('Close the socket')
