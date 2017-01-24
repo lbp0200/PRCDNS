@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import functools
 import json
 
 from dnslib import *
@@ -11,9 +12,12 @@ class DNSServerProtocol(asyncio.Protocol):
     args = None
     gFuncs = globals()
     peername = None
+    loop = None
+    request = None
 
-    def __init__(self, args):
+    def __init__(self, args, loop):
         self.args = args
+        self.loop = loop
 
     def get_data(self, data):
         sz = struct.unpack(">H", data[:2])[0]
@@ -31,9 +35,9 @@ class DNSServerProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         data = self.get_data(data)
-        request = DNSRecord.parse(data)
+        self.request = DNSRecord.parse(data)
         if self.args.debug:
-            print('Data received: {!r}'.format(request))
+            print('Data received: {!r}'.format(self.request))
 
         from IPy import IP
         ip = IP(self.peername[0])
@@ -41,13 +45,21 @@ class DNSServerProtocol(asyncio.Protocol):
         if ip.iptype() == 'PRIVATE':
             client_ip = self.args.myip
 
-        # url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(request.q.qname), client_ip)
-        # google_dns_resp = ProxyClient.get_url(url, self.args.proxy)
-        google_dns_resp = '{"Status": 0,"TC": false,"RD": true,"RA": true,"AD": false,"CD": false,"Question":[ {"name": "img.alicdn.com.","type": 1}],"Answer":[ {"name": "img.alicdn.com.","type": 5,"TTL": 21557,"data": "img.alicdn.com.danuoyi.alicdn.com."},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.109"},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.108"}],"Additional":[],"edns_client_subnet": "223.72.90.0/24","Comment": "Response from danuoyinewns1.gds.alicdn.com.(121.43.18.33)"}'
+        url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(self.request.q.qname),
+                                                                                       client_ip)
+        # client = ProxyClient()
+        # google_dns_resp = client.query_domain(url, self.args.proxy)
+
+        asyncio.ensure_future(ProxyClient.query_domain(), loop=self.loop).add_done_callback(
+            functools.partial(self.send_resp))
+
+    def send_resp(self, fut):
+        google_dns_resp = fut.result()
+        # google_dns_resp = '{"Status": 0,"TC": false,"RD": true,"RA": true,"AD": false,"CD": false,"Question":[ {"name": "img.alicdn.com.","type": 1}],"Answer":[ {"name": "img.alicdn.com.","type": 5,"TTL": 21557,"data": "img.alicdn.com.danuoyi.alicdn.com."},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.109"},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.108"}],"Additional":[],"edns_client_subnet": "223.72.90.0/24","Comment": "Response from danuoyinewns1.gds.alicdn.com.(121.43.18.33)"}'
         if self.args.debug:
             print('from: {};response: {}'.format(self.peername[0], google_dns_resp))
         resp = json.loads(google_dns_resp)
-        a = request.reply()
+        a = self.request.reply()
         for answer in resp['Answer']:
             qTypeFunc = QTYPE[answer['type']]
             a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
@@ -80,8 +92,9 @@ def main():
 
     loop = asyncio.get_event_loop()
     loop.set_debug(args.debug)
+
     # Each client connection will create a new protocol instance
-    coro = loop.create_server(lambda: DNSServerProtocol(args), args.listen, args.port)
+    coro = loop.create_server(lambda: DNSServerProtocol(args, loop), args.listen, args.port)
     server = loop.run_until_complete(coro)
 
     try:

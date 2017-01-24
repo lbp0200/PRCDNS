@@ -8,11 +8,11 @@ Google DNS Proxy
 ### 使用
 1. 在VPS上  
 ```python
-python PRCDNS/__init__.py -r http://127.0.0.1:8123
+PRCDNS -r http://127.0.0.1:8123
 ```
 2. 在自己的机器上
 ```python
-python PRCDNS/__init__.py
+PRCDNS
 ```
 
 欢迎通过Issue讨论、提问和给予指导    
