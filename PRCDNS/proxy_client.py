@@ -18,11 +18,9 @@ class ProxyClient:
                 return await response.text()
 
     @staticmethod
-    async def query_domain():
+    async def query_domain(url, proxy=None):
         async with aiohttp.ClientSession() as session:
-            return await ProxyClient.fetch(session,
-                                           'https://dns.google.com/resolve?name=img.alicdn.com&edns_client_subnet=223.72.90.21/24',
-                                           'http://127.0.0.1:8123')
+            return await ProxyClient.fetch(session, url, proxy)
 
     @staticmethod
     async def get(loop, url):

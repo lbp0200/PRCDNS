@@ -5,7 +5,7 @@ import json
 
 from dnslib import *
 
-from proxy_client import ProxyClient
+from PRCDNS.proxy_client import ProxyClient
 
 
 class DNSServerProtocol(asyncio.Protocol):
@@ -50,7 +50,7 @@ class DNSServerProtocol(asyncio.Protocol):
         # client = ProxyClient()
         # google_dns_resp = client.query_domain(url, self.args.proxy)
 
-        asyncio.ensure_future(ProxyClient.query_domain(), loop=self.loop).add_done_callback(
+        asyncio.ensure_future(ProxyClient.query_domain(url, self.args.proxy), loop=self.loop).add_done_callback(
             functools.partial(self.send_resp))
 
     def send_resp(self, fut):
