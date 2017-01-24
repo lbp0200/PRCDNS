@@ -23,6 +23,7 @@ sudo pip3 install PRCDNS
 ```
 
 ### 使用
+
 1. 如果你把PRCDNS部署到VPS上，和SS做邻居，这样在家、公司都能用
 ```python
 PRCDNS

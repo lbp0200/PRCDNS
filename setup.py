@@ -21,7 +21,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.0.1',
 
-    description='准确、CDN友好的DNS服务软件',
+    description='准确、CDN友好的DNS软件，使用DNS-Over-HTTP',
     long_description=long_description,
 
     # The project's main homepage.
