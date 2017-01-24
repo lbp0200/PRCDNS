@@ -17,15 +17,17 @@
 pdnsd、unbound，即解决了缓存问题，又解决了UDP的问题
 
 ### 安装
-基于Python 3.5
+基于Python 3.5   
+```bash
+sudo pip3 install PRCDNS
+```
 
 ### 使用
-1. 如果你把PRCDNS部署到VPS上，和SS做邻居，这样在家、公司都能用。  
+1. 如果你把PRCDNS部署到VPS上，和SS做邻居，这样在家、公司都能用
 ```python
 PRCDNS
 ```
-2. 把PRCDNS部署到自己本地的机器或者路由器上
-请将SS通过polipo转为http类型，以便于PRCDNS可以访问https://developers.google.com
+2. 如果把PRCDNS部署到自己本地的机器或者路由器上，请将SS通过polipo转为http类型，以便于PRCDNS可以访问https://developers.google.com
 ```python
 PRCDNS -r http://127.0.0.1:8123
 ```
