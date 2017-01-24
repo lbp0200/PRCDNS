@@ -29,7 +29,7 @@ setup(
 
     # Author details
     author='lbp0200',
-    author_email='',
+    author_email='lbp0408@gmail.com',
 
     # Choose your license
     license='unlicense',
