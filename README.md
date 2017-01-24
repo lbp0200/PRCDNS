@@ -7,6 +7,18 @@
 它支持edns_client_subnet，把你的IP作为参数提交，它会返回最优的解析结果，所以说它
 是我见过的最完美的DNS解决方案。
 
+### 测试
+```bash
+#本人北京联通，对比OPENDNS进行测试，证明PRCDNS是CDN友好的
+#23.106.151.177:3535 是我搭建的测试地址，遇到攻击可能会关闭
+#208.67.222.222:443  OPENDNS
+dig @23.106.151.177 +tcp -p 3535 google.com.hk
+dig @208.67.222.222 +tcp -p 443 google.com.hk
+
+dig @23.106.151.177 +tcp -p 3535 img.alicdn.com #123.125.18.108北京联通
+dig @208.67.222.222 +tcp -p 443 img.alicdn.com  #69.192.12.15香港
+```
+
 ### 注意事项：PRCDNS前面一定要放pdnsd或者unbound
 1. PRCDNS**只支持TCP查询** 
 2. PRCDNS**没有缓存**    
@@ -24,14 +36,15 @@ sudo pip3 install PRCDNS
 
 ### 使用
 
-1. 如果你把PRCDNS部署到VPS上，和SS做邻居，这样在家、公司都能用
-```python
+如果你把PRCDNS部署到VPS上，和SS做邻居，这样在家、公司都能用   
+```bash
 PRCDNS
 ```
-2. 如果把PRCDNS部署到自己本地的机器或者路由器上，请将SS通过polipo转为http类型，以便于PRCDNS可以访问https://developers.google.com
-```python
+如果把PRCDNS部署到自己本地的机器或者路由器上，请将SS通过polipo转为http类型，以便于PRCDNS可以访问https://developers.google.com   
+```bash
 PRCDNS -r http://127.0.0.1:8123
 ```
+请使用Supervisor保证PRCDNS一直运行
 
 ### 参数
 ```bash
