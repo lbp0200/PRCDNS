@@ -33,7 +33,7 @@ class TestDict(unittest.TestCase):
             # '114.114.114.114', 53,
             loop=loop)
 
-        d = DNSRecord.question("google.com")
+        d = DNSRecord.question("img.alicdn.com")
         q = d.pack()
         b_req = struct.pack(">H", q.__len__()) + q
         writer.write(b_req)

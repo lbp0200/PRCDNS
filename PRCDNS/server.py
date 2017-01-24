@@ -41,8 +41,9 @@ class DNSServerProtocol(asyncio.Protocol):
         if ip.iptype() == 'PRIVATE':
             client_ip = self.args.myip
 
-        url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(request.q.qname), client_ip)
-        google_dns_resp = ProxyClient.get_url(url, self.args.proxy)
+        # url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(request.q.qname), client_ip)
+        # google_dns_resp = ProxyClient.get_url(url, self.args.proxy)
+        google_dns_resp = '{"Status": 0,"TC": false,"RD": true,"RA": true,"AD": false,"CD": false,"Question":[ {"name": "img.alicdn.com.","type": 1}],"Answer":[ {"name": "img.alicdn.com.","type": 5,"TTL": 21557,"data": "img.alicdn.com.danuoyi.alicdn.com."},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.109"},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.108"}],"Additional":[],"edns_client_subnet": "223.72.90.0/24","Comment": "Response from danuoyinewns1.gds.alicdn.com.(121.43.18.33)"}'
         if self.args.debug:
             print('from: {};response: {}'.format(self.peername[0], google_dns_resp))
         resp = json.loads(google_dns_resp)
