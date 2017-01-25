@@ -20,11 +20,15 @@ class DNSServerProtocol(asyncio.Protocol):
         self.loop = loop
 
     def get_data(self, data):
+        l = len(data)
+        if l == 2:
+            return
         sz = struct.unpack(">H", data[:2])[0]
-        if sz < len(data) - 2:
+        if sz < l - 2:
             raise Exception("Wrong size of TCP packet")
-        elif sz > len(data) - 2:
-            raise Exception("Too big TCP packet")
+        elif sz > l - 2:
+            return data
+            # raise Exception("Too big TCP packet")
         return data[2:]
 
     def connection_made(self, transport):
@@ -35,6 +39,9 @@ class DNSServerProtocol(asyncio.Protocol):
 
     def data_received(self, data):
         data = self.get_data(data)
+        if data is None:
+            self.transport.close()
+            return
         self.request = DNSRecord.parse(data)
         if self.args.debug:
             print('Data received: {!r}'.format(self.request))
@@ -60,10 +67,16 @@ class DNSServerProtocol(asyncio.Protocol):
             print('from: {};response: {}'.format(self.peername[0], google_dns_resp))
         resp = json.loads(google_dns_resp)
         a = self.request.reply()
-        for answer in resp['Answer']:
-            qTypeFunc = QTYPE[answer['type']]
-            a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
-                            ttl=answer['TTL']))
+        if resp['Status'] == 0:
+            for answer in resp['Answer']:
+                qTypeFunc = QTYPE[answer['type']]
+                a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
+                                ttl=answer['TTL']))
+        elif resp['Status'] == 3:
+            for answer in resp['Authority']:
+                qTypeFunc = QTYPE[answer['type']]
+                a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
+                                ttl=answer['TTL']))
         if self.args.debug:
             print('Send: {!r}'.format(a))
         b_resp = a.pack()
