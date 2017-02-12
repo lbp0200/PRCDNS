@@ -1,5 +1,4 @@
 import asyncio
-
 import aiohttp
 
 
@@ -29,5 +28,5 @@ class ProxyClient:
 
     @staticmethod
     def get_url(url, proxy=None):
-        loop1 = asyncio.get_event_loop()
-        return loop1.run_until_complete(ProxyClient.get(loop1, url))
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(ProxyClient.get(loop, url))

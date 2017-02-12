@@ -5,7 +5,7 @@ import json
 
 from dnslib import *
 
-from PRCDNS.proxy_client import ProxyClient
+from proxy_client import ProxyClient
 
 
 class DNSServerProtocol(asyncio.Protocol):
@@ -67,12 +67,12 @@ class DNSServerProtocol(asyncio.Protocol):
             print('from: {};response: {}'.format(self.peername[0], google_dns_resp))
         resp = json.loads(google_dns_resp)
         a = self.request.reply()
-        if resp['Status'] == 0:
+        if resp['Status'] == 0 and 'Answer' in resp:
             for answer in resp['Answer']:
                 qTypeFunc = QTYPE[answer['type']]
                 a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
                                 ttl=answer['TTL']))
-        elif resp['Status'] == 3:
+        elif resp['Status'] == 3 and 'Authority' in resp:
             for answer in resp['Authority']:
                 qTypeFunc = QTYPE[answer['type']]
                 a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
@@ -111,6 +111,8 @@ def main():
     server = loop.run_until_complete(coro)
 
     try:
+        print("public ip is {}".format(myip))
+        print("listen on {0}:{1}".format(args.listen, args.port))
         loop.run_forever()
     except KeyboardInterrupt:
         pass
