@@ -5,7 +5,7 @@ import json
 
 from dnslib import *
 
-from proxy_client import ProxyClient
+from PRCDNS.proxy_client import ProxyClient
 
 
 class DNSServerProtocol(asyncio.Protocol):
