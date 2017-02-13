@@ -54,3 +54,9 @@ PRCDNS -r http://127.0.0.1:8123
 -r http_proxy 如果PRCDNS可以访问https://developers.google.com就不用填写
 ```
 欢迎通过Issue讨论、提问和给予指导    
+
+
+
+### docker 方式运行
+1. build： `docker build -t prcdns:latest .`
+2. run:  `docker run -p 3535:3535 -d --name prcdns prcdns:latest`
