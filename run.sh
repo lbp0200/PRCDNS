@@ -1,0 +1,2 @@
+
+PRCDNS -l $HOST -p $PORT
