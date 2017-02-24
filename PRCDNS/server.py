@@ -72,11 +72,14 @@ class DNSServerProtocol(asyncio.Protocol):
                 qTypeFunc = QTYPE[answer['type']]
                 a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
                                 ttl=answer['TTL']))
-        elif resp['Status'] == 3 and 'Authority' in resp:
-            for answer in resp['Authority']:
-                qTypeFunc = QTYPE[answer['type']]
-                a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
-                                ttl=answer['TTL']))
+        # elif resp['Status'] == 3 and 'Authority' in resp:
+        #     for answer in resp['Authority']:
+        #         qTypeFunc = QTYPE[answer['type']]
+        #         a.add_answer(RR(answer['name'], answer['type'], rdata=self.gFuncs[qTypeFunc](answer['data']),
+        #                         ttl=answer['TTL']))
+        else:
+            self.transport.close()
+            return
         if self.args.debug:
             print('Send: {!r}'.format(a))
         b_resp = a.pack()
