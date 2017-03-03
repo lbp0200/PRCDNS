@@ -55,7 +55,8 @@ PRCDNS -r http://127.0.0.1:8123
 ```
 欢迎通过Issue讨论、提问和给予指导    
 
-
+### 更多文档
+[wiki](https://github.com/lbp0200/PRCDNS/wiki)
 
 ### docker 方式运行
 1. build： `docker build -t prcdns:latest .`
