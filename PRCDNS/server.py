@@ -101,9 +101,15 @@ def get_arg():
 
 def main():
     args = get_arg()
-    myip = ProxyClient.get_url('http://ipinfo.io/json')
-    myip = json.loads(myip)
-    myip = myip['ip']
+    if args.proxy is None:  # 无代理，在PRC局域网外
+        myip = ProxyClient.get_url('http://ipinfo.io/json')
+        myip = json.loads(myip)
+        myip = myip['ip']
+    else:  # 用代理，在PRC局域网内
+        myip = ProxyClient.get_url('http://ip.taobao.com/service/getIpInfo.php?ip=myip')
+        print(myip)
+        myip = json.loads(myip)
+        myip = myip['data']['ip']
     args.myip = myip
 
     loop = asyncio.get_event_loop()
