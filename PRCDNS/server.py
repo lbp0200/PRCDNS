@@ -14,6 +14,7 @@ class DNSServerProtocol(asyncio.Protocol):
     peername = None
     loop = None
     request = None
+    php_proxy = 'http://lbp.epizy.com/?i=1&name='
 
     def __init__(self, args, loop):
         self.args = args
@@ -46,14 +47,26 @@ class DNSServerProtocol(asyncio.Protocol):
         if self.args.debug:
             print('Data received: {!r}'.format(self.request))
 
-        from IPy import IP
-        ip = IP(self.peername[0])
-        client_ip = self.peername[0]
-        if ip.iptype() == 'PRIVATE':
-            client_ip = self.args.myip
+        if self.args.php == False:
+            from IPy import IP
+            ip = IP(self.peername[0])
+            client_ip = self.peername[0]
+            if ip.iptype() == 'PRIVATE':
+                client_ip = self.args.myip
 
-        url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(self.request.q.qname),
-                                                                                       client_ip)
+            url = 'https://dns.google.com/resolve?name={}&edns_client_subnet={}/24'.format(str(self.request.q.qname),
+                                                                                           client_ip)
+        else:
+            if self.args.php == True:
+                print('fuck')
+                self.args.php = self.php_proxy
+            else:
+                ##自定义PHP代理
+                pass
+            url = ''.join([self.args.php, str(self.request.q.qname)])
+
+        print(self.args.php, self.php_proxy, url)
+
         # client = ProxyClient()
         # google_dns_resp = client.query_domain(url, self.args.proxy)
 
@@ -63,6 +76,9 @@ class DNSServerProtocol(asyncio.Protocol):
     def send_resp(self, fut):
         google_dns_resp = fut.result()
         # google_dns_resp = '{"Status": 0,"TC": false,"RD": true,"RA": true,"AD": false,"CD": false,"Question":[ {"name": "img.alicdn.com.","type": 1}],"Answer":[ {"name": "img.alicdn.com.","type": 5,"TTL": 21557,"data": "img.alicdn.com.danuoyi.alicdn.com."},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.109"},{"name": "img.alicdn.com.danuoyi.alicdn.com.","type": 1,"TTL": 59,"data": "111.32.130.108"}],"Additional":[],"edns_client_subnet": "223.72.90.0/24","Comment": "Response from danuoyinewns1.gds.alicdn.com.(121.43.18.33)"}'
+        if self.args.php != False:
+            print(google_dns_resp)
+            google_dns_resp = base64.b64decode(google_dns_resp).decode('utf8')
         if self.args.debug:
             print('from: {};response: {}'.format(self.peername[0], google_dns_resp))
         resp = json.loads(google_dns_resp)
@@ -95,22 +111,30 @@ def get_arg():
     parser.add_argument('-l', '--listen', help='listening IP,default 0.0.0.0', default='0.0.0.0')
     parser.add_argument('-p', '--port', help='listening Port,default 3535', default=3535)
     parser.add_argument('-r', '--proxy', help='Used For Query Google DNS,default direct', default=None)
+    parser.add_argument('-f', '--php', help='php proxy for Google Http DNS', default=False)
 
     return parser.parse_args()
 
 
 def main():
     args = get_arg()
-    if args.proxy is None:  # 无代理，在PRC局域网外
-        myip = ProxyClient.get_url('http://ipinfo.io/json')
-        myip = json.loads(myip)
-        myip = myip['ip']
-    else:  # 用代理，在PRC局域网内
-        myip = ProxyClient.get_url('http://ip.taobao.com/service/getIpInfo.php?ip=myip')
-        print(myip)
-        myip = json.loads(myip)
-        myip = myip['data']['ip']
-    args.myip = myip
+
+    if args.php == False:
+        if args.proxy is None:  # 无代理，在PRC局域网外
+            myip = ProxyClient.get_url('http://ipinfo.io/json')
+            myip = json.loads(myip)
+            myip = myip['ip']
+        else:  # 用代理，在PRC局域网内
+            myip = ProxyClient.get_url('http://ip.taobao.com/service/getIpInfo.php?ip=myip')
+            print(myip)
+            myip = json.loads(myip)
+            myip = myip['data']['ip']
+        args.myip = myip
+    elif args.php == 'true':
+        args.php = True
+    else:
+        ##自定义PHP代理
+        pass
 
     loop = asyncio.get_event_loop()
     loop.set_debug(args.debug)
@@ -120,7 +144,12 @@ def main():
     server = loop.run_until_complete(coro)
 
     try:
-        print("public ip is {}".format(myip))
+        try:
+            args.myip
+        except:
+            pass
+        else:
+            print("public ip is {}".format(args.myip))
         print("listen on {0}:{1}".format(args.listen, args.port))
         loop.run_forever()
     except KeyboardInterrupt:
