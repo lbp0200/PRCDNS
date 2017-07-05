@@ -11,11 +11,13 @@
 ```bash
 #本人北京联通，对比OPENDNS进行测试，证明PRCDNS是CDN友好的
 #23.106.151.177:3535 是我搭建的测试地址，遇到攻击可能会关闭
+#seaof-153-125-234-242.jp-tokyo-12.arukascloud.io:31910 部署在日本樱花docker
 #208.67.222.222:443  OPENDNS
 dig @23.106.151.177 +tcp -p 3535 google.com.hk
 dig @208.67.222.222 +tcp -p 443 google.com.hk
 
 dig @23.106.151.177 +tcp -p 3535 img.alicdn.com #123.125.18.108北京联通
+dig @seaof-153-125-234-242.jp-tokyo-12.arukascloud.io +tcp -p 31910 img.alicdn.com #123.125.18.108北京联通
 dig @208.67.222.222 +tcp -p 443 img.alicdn.com  #69.192.12.15香港
 ```
 
