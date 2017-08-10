@@ -56,6 +56,10 @@ class DNSServerProtocol(asyncio.Protocol):
                                                                                        client_ip)
         # client = ProxyClient()
         # google_dns_resp = client.query_domain(url, self.args.proxy)
+        try:
+            from asyncio import ensure_future
+        except ImportError:
+            from asyncio import async as ensure_future
 
         asyncio.ensure_future(ProxyClient.query_domain(url, self.args.proxy), loop=self.loop).add_done_callback(
             functools.partial(self.send_resp))
