@@ -95,6 +95,7 @@ def get_arg():
     parser.add_argument('-l', '--listen', help='listening IP,default 0.0.0.0', default='0.0.0.0')
     parser.add_argument('-p', '--port', help='listening Port,default 3535', default=3535)
     parser.add_argument('-r', '--proxy', help='Used For Query Google DNS,default direct', default=None)
+    parser.add_argument('-ip', '--myip', help='IP location', default=None)
 
     return parser.parse_args()
 
@@ -104,13 +105,14 @@ def main():
     if args.proxy is None:  # 无代理，在PRC局域网外
         myip = ProxyClient.get_url('http://ipinfo.io/json')
         myip = json.loads(myip)
-        myip = myip['ip']
+        args.myip = myip['ip']
     else:  # 用代理，在PRC局域网内
-        myip = ProxyClient.get_url('http://ip.taobao.com/service/getIpInfo.php?ip=myip')
-        print(myip)
-        myip = json.loads(myip)
-        myip = myip['data']['ip']
-    args.myip = myip
+        if args.myip is None:
+            myip = ProxyClient.get_url('http://ip.taobao.com/service/getIpInfo.php?ip=myip')
+            print(myip)
+            myip = json.loads(myip)
+            myip = myip['data']['ip']
+            args.myip = myip
 
     loop = asyncio.get_event_loop()
     loop.set_debug(args.debug)
@@ -120,7 +122,7 @@ def main():
     server = loop.run_until_complete(coro)
 
     try:
-        print("public ip is {}".format(myip))
+        print("public ip is {}".format(args.myip))
         print("listen on {0}:{1}".format(args.listen, args.port))
         loop.run_forever()
     except KeyboardInterrupt:
