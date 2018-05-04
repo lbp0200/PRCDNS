@@ -2,6 +2,8 @@
 这是一个Google DNS代理   
 不同之处在于CDN友好，根据你的IP返回最优的解析结果
 
+基于Python2.7另外开发了一个[prc-dns](https://github.com/lbp0200/prc-dns)，新增IPV6、脱离必须使用代理的限制，支持UDP和TCP。
+
 ### 原理
 [DNS-over-HTTPS API](https://developers.google.com/speed/public-dns/docs/dns-over-https)   
 它支持edns_client_subnet，把你的IP作为参数提交，它会返回最优的解析结果，所以说它
